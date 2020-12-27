@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.List;
 
 public class Driver {
@@ -10,6 +11,7 @@ public class Driver {
     private double[][] x;
     private double[][] y;
     private NeuralNetwork nn;
+    private final int[] trainPoses = new int[n];
     private double[] predictValues, sourceRes;
     private Main.Drawable callback;
 
@@ -33,11 +35,38 @@ public class Driver {
         for (int pos = 0; pos < n; pos++) {
             sourceRes[pos] = y[pos][0];
         }
+        System.out.println("\n\n\n");
 
         predictValues = new double[n];
         nn = new NeuralNetwork(2, hidden, 1, l_rate, 100);
+        System.out.println("---------- Init Network setup:");
+        nn.print();
+        System.out.println("Teaching ...");
         nn.fit(x, y, trains, this);
         updatePredictValues();
+//        printStat();
+        printDiffStat();
+    }
+
+    private void printDiffStat() {
+        double[] delta = new double[sourceRes.length];
+        for (int pos = 0; pos < n; pos++) {
+            delta[pos] = predictValues[pos] - sourceRes[pos];
+        }
+        double averageDelta = Arrays.stream(delta).average().getAsDouble();
+        double maxDelta = Arrays.stream(delta).map(Math::abs).max().getAsDouble();
+        double sdevPre=Arrays.stream(delta).map(v->Math.pow(v-averageDelta,2)).sum();
+        double sdev = Math.sqrt(sdevPre/n);
+        System.out.println("max delta: " + maxDelta);
+        System.out.println("average delta: " + averageDelta);
+        System.out.println("standard deviation: " + sdev);
+    }
+
+    private void printStat() {
+        int sum = Arrays.stream(trainPoses).sum();
+        for (int i=0; i< trainPoses.length; i++) {
+            System.out.println("pos: " + i + ", " + trainPoses[i] + ", " + trainPoses[i]*100.0/sum + " %");
+        }
     }
 
     void updatePredictValues() {
@@ -72,5 +101,9 @@ public class Driver {
 
     public void stop() {
         nn.stop();
+    }
+
+    public void train(int trainPos) {
+        trainPoses[trainPos]++;
     }
 }

@@ -46,6 +46,7 @@ public class NeuralNetwork {
     public void fit(double[][] X, double[][] Y, int trains, Driver driver) {
         for (int i = 0; i < trains; i++) {
             int sampleN = (int) (Math.random() * X.length);
+            driver.train(sampleN);
             this.train(X[sampleN], Y[sampleN]);
             if (i % updateEachTrains == 0) {
                 driver.updatePredictValues();
