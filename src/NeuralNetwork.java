@@ -4,7 +4,7 @@ public class NeuralNetwork {
 
     volatile boolean stop = false;
 
-    private final double l_rate;
+    private double l_rate;
     private final int updateEachTrains;
     private Matrix weights_ih, weights_ho, bias_h, bias_o;
 
@@ -49,7 +49,7 @@ public class NeuralNetwork {
             driver.train(sampleN);
             this.train(X[sampleN], Y[sampleN]);
             if (i % updateEachTrains == 0) {
-                driver.updatePredictValues();
+                driver.invokeCallback();
                 if (stop) {
                     return;
                 }

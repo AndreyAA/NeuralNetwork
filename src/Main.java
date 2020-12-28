@@ -5,6 +5,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static java.awt.GridBagConstraints.*;
+
 public class Main extends JFrame {
 
     private MyGraphic canvas;
@@ -21,17 +23,19 @@ public class Main extends JFrame {
         c.gridx = 0;
         c.gridy = 0;
         c.weighty = 0.9;
+        c.fill = GridBagConstraints.BOTH;
 
         add(canvas, c);
 
         panel = new SetupPanel(canvas);
         panel.setSize(800, 50);
-        c.fill = GridBagConstraints.CENTER;
+        c.fill = HORIZONTAL;
         c.gridx = 0;
         c.gridy = 1;
         c.weighty = 0.1;
+        c.weightx = 1;
         add(panel, c);
-
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setVisible(true);
     }
@@ -54,56 +58,96 @@ public class Main extends JFrame {
         private final JTextField trainNumber;
         private final JTextField numberOfNeurons;
         private final JTextField rateTextField;
+        private final JTextField fromXTextField;
+        private final JTextField toXTextField;
+        private final JTextField numberTextField;
+        private final JCheckBox freezNNCheckBox;
         private final JComboBox<String> functionTextField;
         private final Drawable drawable;
         private ThreadPoolExecutor executor =
                 new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS,
                         new ArrayBlockingQueue(1));
-        private Driver dr;
+        private volatile Driver dr;
 
         public SetupPanel(Drawable drawable) {
             super();
             this.drawable = drawable;
-            setLayout(new GridLayout(1, 8));
-            // 1 row
-            add(new JLabel("Trainings number"));
-            trainNumber = new JTextField("1000000");
-            add(trainNumber);
+            setLayout(new GridBagLayout());
+            GridBagConstraints c = new GridBagConstraints();
+            c.gridx = 0;
+            c.gridy = 0;
+            c.weighty = 1;
+            c.weightx = 1;
+            c.fill = NONE;
+            c.ipadx = 5;
 
-            // 2 row
-            add(new JLabel("Hidden neurons"));
+            addComponent(0, 0, c, new JLabel("Trainings number: "), GridBagConstraints.NONE, LINE_END);
+            trainNumber = new JTextField("200000");
+            addComponent(0, 1, c, trainNumber, GridBagConstraints.HORIZONTAL, LINE_START);
+
+            addComponent(0, 2, c, new JLabel("Hidden neurons: "), GridBagConstraints.NONE, LINE_END);
             numberOfNeurons = new JTextField("3");
-            add(numberOfNeurons);
+            addComponent(0, 3, c, numberOfNeurons, GridBagConstraints.HORIZONTAL, LINE_START);
 
-            // 3 row
-            add(new JLabel("Learning rate"));
-            rateTextField = new JTextField("0.1");
-            add(rateTextField);
+            addComponent(0, 4, c, new JLabel("Learning rate: "), GridBagConstraints.NONE, LINE_END);
+            rateTextField = new JTextField("0.2");
+            addComponent(0, 5, c, rateTextField, GridBagConstraints.HORIZONTAL, LINE_START);
 
-            // 4 row
-
+            addComponent(0, 6, c, new JLabel("Function: "), GridBagConstraints.NONE, LINE_END);
             functionTextField = new JComboBox<>();
             for (Func value : Func.values()) {
                 functionTextField.addItem(value.getLabel());
             }
-            add(functionTextField);
+            addComponent(0, 7, c, functionTextField, GridBagConstraints.NONE, LINE_START);
 
-            // 5 row
+            addComponent(1, 0, c, new JLabel("From X: "), GridBagConstraints.NONE, LINE_END);
+            fromXTextField = new JTextField("-3.1415");
+            addComponent(1, 1, c, fromXTextField, GridBagConstraints.HORIZONTAL, c.anchor);
+
+            addComponent(1, 2, c, new JLabel("To X: "), GridBagConstraints.NONE, LINE_END);
+            toXTextField = new JTextField("3.1415");
+            addComponent(1, 3, c, toXTextField, GridBagConstraints.HORIZONTAL, LINE_START);
+
+            addComponent(1, 4, c, new JLabel("Number of data: "), GridBagConstraints.NONE, LINE_END);
+            numberTextField = new JTextField("100");
+            addComponent(1, 5, c, numberTextField, GridBagConstraints.HORIZONTAL, LINE_START);
+
+            addComponent(1, 6, c, new JLabel("Freeze NN: "), GridBagConstraints.NONE, LINE_END);
+            freezNNCheckBox = new JCheckBox("", false);
+            addComponent(1, 7, c, freezNNCheckBox, GridBagConstraints.NONE, LINE_START);
+
             JButton button = new JButton("Apply");
-            add(button);
+            c.gridheight=2;
+            addComponent(1, 8, c, button, GridBagConstraints.NONE, GridBagConstraints.CENTER);
             button.addActionListener((l) -> {
                 if (dr != null) {
                     dr.stop();
                 }
-                dr = new Driver(new DataProvider(func()), numberOfNeurons(), numberForTrainings(), drawable);
-                executor.execute(() -> startTeach(dr));
+                if (needTeachNN()) {
+                    dr = new Driver(new DataProvider(func(), fromX(), toX(), numberOfSourceData()),
+                            numberOfNeurons(), numberForTrainings(), drawable);
+                } else {
+                    dr = dr.copyNN(new DataProvider(func(), fromX(), toX(), numberOfSourceData()),
+                            numberOfNeurons(), numberForTrainings(), drawable);
+                }
+                executor.execute(() -> {
+                    if (needTeachNN()) {
+                        dr.teach(rate());
+                    } else {
+                        dr.prepareSourceData();
+                        dr.updatePredictValues();
+                    }
+                    this.drawable.paint(dr.getSourceRes(), dr.getPredictValues());
+                });
             });
         }
 
-        private void startTeach(Driver dr) {
-            dr.teach(rate());
-            drawable.paint(dr.getSourceRes(), dr.getPredictValues());
-            dr.printNN();
+        private void addComponent(int row, int column, GridBagConstraints c, JComponent comp, int fill, int anchor) {
+            c.gridy = row;
+            c.gridx = column;
+            c.anchor = anchor;
+            c.fill = fill;
+            add(comp, c);
         }
 
         public int numberOfNeurons() {
@@ -116,6 +160,21 @@ public class Main extends JFrame {
 
         public int numberForTrainings() {
             return Integer.parseInt(trainNumber.getText());
+        }
+
+        public boolean needTeachNN() {
+            return !freezNNCheckBox.isSelected();
+        }
+        public double fromX() {
+            return Double.parseDouble(fromXTextField.getText());
+        }
+
+        public double toX() {
+            return Double.parseDouble(toXTextField.getText());
+        }
+
+        public int numberOfSourceData() {
+            return Integer.parseInt(numberTextField.getText());
         }
 
         public double rate() {

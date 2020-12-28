@@ -1,17 +1,38 @@
 public class DataProvider {
 
-    private Func func;
+    private final Func func;
+    private final double fromX, toX;
+    private final int number;
 
-    public DataProvider(Func func) {
+    public DataProvider(Func func, double fromX, double toX, int number) {
         this.func = func;
+        this.fromX = fromX;
+        this.toX = toX;
+        this.number = number;
     }
 
-    private static double getXforStep(double step, int i) {
-        return -Math.PI + step * i;
+    private double getXforStep(double step, int i) {
+        return fromX + step * i;
     }
 
-    private static double calcStep(int n) {
-        return 2 * Math.PI / n;
+    private double calcStep(int n) {
+        return (toX - fromX) / number;
+    }
+
+    public Func getFunc() {
+        return func;
+    }
+
+    public double getFromX() {
+        return fromX;
+    }
+
+    public double getToX() {
+        return toX;
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     public double[][] getOutput(int n) {
