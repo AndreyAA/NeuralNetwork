@@ -10,6 +10,7 @@ UI has control to choose:
 - Trainings number;
 - Size of hidden neurons;
 - Learning rate;
+- fromX, toX, number of data;
 - Function to predict (sin(x), sin(2x), sin(x)*x, cos(2x)*x, x*x, sqrt(x)
 
 About Neural Network:
