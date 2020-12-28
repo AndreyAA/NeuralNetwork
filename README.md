@@ -4,7 +4,7 @@ Simple neural network with UI and console parts.
 Based on article: https://towardsdatascience.com/understanding-and-implementing-neural-networks-in-java-from-scratch-61421bb6352c
 
 Requirements:
-Java SE 8;
+only Java SE 8;
 
 UI has control to choose:
 - Trainings number;
@@ -25,3 +25,5 @@ How to run:
 TODO:
 - add min error to stop learning;
 - save/load NN state;
+
+![Alt text](res/nn.png?raw=true "NeuralNetwork")
