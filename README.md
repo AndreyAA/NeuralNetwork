@@ -4,10 +4,10 @@ Very simple neural network to predict trigonometric functions with GUI and conso
 Based on article: https://towardsdatascience.com/understanding-and-implementing-neural-networks-in-java-from-scratch-61421bb6352c
 
 Neural Network:
-inputs: 1;
-hidden layers: 1;
-hidden neuros: configurable;
-output: 1;
+- inputs: 1;
+- hidden layers: 1;
+- hidden neuros: configurable;
+- output: 1;
 
 Requirements:
 only Java SE 8;
