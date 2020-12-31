@@ -2,28 +2,21 @@ import java.util.List;
 
 public class NeuralNetwork {
 
-    volatile boolean stop = false;
-
-    private double l_rate;
-    private final int updateEachTrains;
+    private volatile boolean stop = false;
     private Matrix weights_ih, weights_ho, bias_h, bias_o;
 
     /**
-     * create Neural Network
+     * create Neural Network with sigmoid for hidden layer
      * @param input number of imputs
      * @param hidden number of hidden neurons in 1 hidden layer
      * @param output number of outputs
-     * @param l_rate learning rate
-     * @param updateEachTrains
      */
-    public NeuralNetwork(int input, int hidden, int output, double l_rate, int updateEachTrains) {
+    public NeuralNetwork(int input, int hidden, int output) {
         weights_ih = new Matrix(hidden, input);
         weights_ho = new Matrix(output, hidden);
 
         bias_h = new Matrix(hidden, 1);
         bias_o = new Matrix(output, 1);
-        this.l_rate = l_rate;
-        this.updateEachTrains = updateEachTrains;
     }
 
     public void print() {
@@ -43,11 +36,11 @@ public class NeuralNetwork {
         bias_o.print();
     }
 
-    public void fit(double[][] X, double[][] Y, int trains, Driver driver) {
+    public void fit(double[][] X, double[][] Y, int trains, Driver driver, double lRate, double updateEachTrains) {
         for (int i = 0; i < trains; i++) {
             int sampleN = (int) (Math.random() * X.length);
             driver.train(sampleN);
-            this.train(X[sampleN], Y[sampleN]);
+            train(X[sampleN], Y[sampleN], lRate);
             if (i % updateEachTrains == 0) {
                 driver.invokeCallback();
                 if (stop) {
@@ -76,7 +69,7 @@ public class NeuralNetwork {
     }
 
 
-    public void train(double[] X, double[] Y) {
+    public void train(double[] X, double[] Y, double lRate) {
         Matrix input = Matrix.fromArray(X);
         Pair<Matrix> res = predictInternal(input);
         Matrix output = res.getFirst();
@@ -95,7 +88,7 @@ public class NeuralNetwork {
         Matrix error = Matrix.subtract(target, output);
 //        Matrix gradient = output.dsigmoid();
 //        gradient.multiply(error);
-        error.multiply(l_rate);
+        error.multiply(lRate);
 
         Matrix hidden_T = Matrix.transpose(hidden);
         Matrix who_delta = Matrix.multiply(error, hidden_T);
@@ -108,7 +101,7 @@ public class NeuralNetwork {
 
         Matrix h_gradient = hidden.dsigmoid();
         h_gradient.multiply(hidden_errors);
-        h_gradient.multiply(l_rate);
+        h_gradient.multiply(lRate);
 
         Matrix i_T = Matrix.transpose(input);
         Matrix wih_delta = Matrix.multiply(h_gradient, i_T);

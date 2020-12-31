@@ -36,11 +36,11 @@ public class Driver {
     public void teach(double l_rate) {
         prepareSourceData();
         System.out.println("\n\n\n");
-        nn = new NeuralNetwork(2, hidden, 1, l_rate, 100);
+        nn = new NeuralNetwork(2, hidden, 1);
         System.out.println("---------- Init Network setup:");
         nn.print();
         System.out.println("Teaching ...");
-        nn.fit(x, y, trains, this);
+        nn.fit(x, y, trains, this, l_rate, 100);
         invokeCallback();
         nn.print();
 //        printStat();
