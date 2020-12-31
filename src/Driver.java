@@ -29,22 +29,30 @@ public class Driver {
 
     public static void main(String[] args) {
         Driver dr = new Driver(new DataProvider(Func.sinx, -Math.PI, Math.PI, 100), 3, 100000, Main.Drawable.EMPTY);
-        dr.teach(0.1);
+        dr.newTeach(0.1);
         dr.print();
     }
 
-    public void teach(double l_rate) {
-        prepareSourceData();
-        System.out.println("\n\n\n");
+    public void newTeach(double l_rate) {
+        System.out.println("reinit neural network");
         nn = new NeuralNetwork(2, hidden, 1);
-        System.out.println("---------- Init Network setup:");
+        train(l_rate);
+    }
+
+    public void continueTeach(double l_rate) {
+        System.out.println("continue training ...");
+        train(l_rate);
+    }
+
+    private void train(double l_rate) {
+        prepareSourceData();
         nn.print();
-        System.out.println("Teaching ...");
+        System.out.println("teaching ...");
         nn.fit(x, y, trains, this, l_rate, 100);
         invokeCallback();
         nn.print();
 //        printStat();
-        printDiffStat();
+        printDiff(calcDiff());
     }
 
     void prepareSourceData() {
@@ -57,7 +65,7 @@ public class Driver {
         predictValues = new double[number];
     }
 
-    private void printDiffStat() {
+    public Stat calcDiff() {
         double[] delta = new double[sourceRes.length];
         for (int pos = 0; pos < number; pos++) {
             delta[pos] = predictValues[pos] - sourceRes[pos];
@@ -66,9 +74,13 @@ public class Driver {
         double maxDelta = Arrays.stream(delta).map(Math::abs).max().getAsDouble();
         double sdevPre=Arrays.stream(delta).map(v->Math.pow(v-averageDelta,2)).sum();
         double sdev = Math.sqrt(sdevPre/ number);
-        System.out.println("max delta: " + maxDelta);
-        System.out.println("average delta: " + averageDelta);
-        System.out.println("standard deviation: " + sdev);
+        return new Stat(averageDelta, maxDelta, sdev);
+    }
+
+    private void printDiff(Stat stat) {
+        System.out.println("max delta: " + stat.getMax());
+        System.out.println("average delta: " + stat.getAvg());
+        System.out.println("standard deviation: " + stat.getStdDev());
     }
 
     private void printStat() {
@@ -80,7 +92,7 @@ public class Driver {
 
     void invokeCallback() {
         updatePredictValues();
-        callback.paint(getSourceRes(), getPredictValues());
+        callback.paint(getSourceRes(), getPredictValues(), null);
     }
 
     void updatePredictValues() {

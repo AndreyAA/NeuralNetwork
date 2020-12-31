@@ -47,11 +47,11 @@ public class Main extends JFrame {
     public interface Drawable {
         public static Drawable EMPTY = new Drawable() {
             @Override
-            public void paint(double[] base, double[] predict) {
+            public void paint(double[] base, double[] predict, Stat stat) {
                 //empty
             }
         };
-        public void paint(double[] base, double[] predict);
+        public void paint(double[] base, double[] predict, Stat stat);
     }
 
     private static class SetupPanel extends JPanel {
@@ -116,9 +116,20 @@ public class Main extends JFrame {
             freezNNCheckBox = new JCheckBox("", false);
             addComponent(1, 7, c, freezNNCheckBox, GridBagConstraints.NONE, LINE_START);
 
-            JButton button = new JButton("Apply");
-            c.gridheight=2;
-            addComponent(1, 8, c, button, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+            JButton contButton = new JButton("Continue");
+            c.gridheight=1;
+            addComponent(0, 8, c, contButton, HORIZONTAL, GridBagConstraints.CENTER);
+            contButton.addActionListener((l) -> {
+                executor.execute(() -> {
+                    dr.continueTeach(rate());
+                    this.drawable.paint(dr.getSourceRes(), dr.getPredictValues(), dr.calcDiff());
+                });
+            });
+            contButton.setEnabled(false);
+
+            JButton button = new JButton(" Apply ");
+            c.gridheight=1;
+            addComponent(1, 8, c, button, GridBagConstraints.HORIZONTAL, GridBagConstraints.CENTER);
             button.addActionListener((l) -> {
                 if (dr != null) {
                     dr.stop();
@@ -132,13 +143,15 @@ public class Main extends JFrame {
                 }
                 executor.execute(() -> {
                     if (needTeachNN()) {
-                        dr.teach(rate());
+                        dr.newTeach(rate());
                     } else {
                         dr.prepareSourceData();
                         dr.updatePredictValues();
                     }
-                    this.drawable.paint(dr.getSourceRes(), dr.getPredictValues());
+                    this.drawable.paint(dr.getSourceRes(), dr.getPredictValues(), dr.calcDiff());
                 });
+
+                contButton.setEnabled(true);
             });
         }
 
@@ -186,13 +199,14 @@ public class Main extends JFrame {
         double min, max;
         private double[] base;
         private double[] predict;
+        private Stat stat;
 
         public MyGraphic(GraphicsConfiguration config) {
             super(config);
         }
 
         @Override
-        public void paint(double[] base, double[] predict) {
+        public void paint(double[] base, double[] predict, Stat stat) {
             this.base = base;
             this.predict = predict;
             if (base == null || predict == null) {
@@ -200,6 +214,8 @@ public class Main extends JFrame {
             }
             min = Math.min(Arrays.stream(base).min().getAsDouble(), Arrays.stream(predict).min().getAsDouble());
             max = Math.max(Arrays.stream(base).max().getAsDouble(), Arrays.stream(predict).max().getAsDouble());
+            this.stat = stat;
+
             repaint();
         }
 
@@ -213,6 +229,20 @@ public class Main extends JFrame {
             drawData(g, predict);
             g.setColor(Color.WHITE);
             drawData(g, base);
+            printStat(g, stat);
+        }
+
+        private void printStat(Graphics g, Stat stat) {
+            if (stat!=null) {
+                g.setColor(Color.WHITE);
+                drawText(g, String.format("Average delta: %f", stat.getAvg()), 10, 10);
+                drawText(g, String.format("Max delta: %f", stat.getMax()), 10, 25);
+                drawText(g, String.format("Std dev: %f", stat.getStdDev()), 10, 40);
+            }
+        }
+
+        private void drawText(Graphics g, String averageDelta, int x, int y) {
+            g.drawChars(averageDelta.toCharArray(), 0, averageDelta.toCharArray().length, x, y);
         }
 
         private void drawData(Graphics g, double[] base) {
