@@ -3,7 +3,7 @@ import java.util.List;
 public class NeuralNetwork {
 
     private volatile boolean stop = false;
-    private Matrix weights_ih, weights_ho, bias_h, bias_o;
+    private final Matrix weights_ih, weights_ho, bias_h, bias_o;
 
     /**
      * create Neural Network with sigmoid for hidden layer
@@ -63,7 +63,7 @@ public class NeuralNetwork {
         hidden.sigmoid();
 
         Matrix output = Matrix.multiply(weights_ho, hidden);
-//        output.add(bias_o);
+        output.add(bias_o);
 //        output.sigmoid();
         return new Pair<>(output, hidden);
     }
