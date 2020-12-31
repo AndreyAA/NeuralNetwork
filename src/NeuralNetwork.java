@@ -71,18 +71,12 @@ public class NeuralNetwork {
 
     public void train(double[] X, double[] Y, double lRate) {
         Matrix input = Matrix.fromArray(X);
+        //forward propagation
         Pair<Matrix> res = predictInternal(input);
+
+        // backward propagation
         Matrix output = res.getFirst();
         Matrix hidden = res.getSecond();
-/*        Matrix input = Matrix.fromArray(X);
-        Matrix hidden = Matrix.multiply(weights_ih, input);
-        hidden.add(bias_h);
-        hidden.sigmoid();
-
-        Matrix output = Matrix.multiply(weights_ho, hidden);
-        output.add(bias_o);
-        output.sigmoid();*/
-
         Matrix target = Matrix.fromArray(Y);
 
         Matrix error = Matrix.subtract(target, output);
